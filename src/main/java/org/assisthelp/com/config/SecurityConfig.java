@@ -53,7 +53,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 //Toute les requetes besoin authentification sauf /token/**
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/token/**").permitAll()
+                        .requestMatchers(
+                                "/signup/**",
+                                "/token/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

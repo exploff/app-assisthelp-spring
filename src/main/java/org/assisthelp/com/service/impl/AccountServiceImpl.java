@@ -27,10 +27,9 @@ public class AccountServiceImpl implements AccountService, UserDetailsService {
 
     private AppUserRepository appUserRepository;
     private AppRoleRepository appRoleRepository;
-
     private ChildrenService childrenService;
-
     private PasswordEncoder passwordEncoder;
+
 
     public AccountServiceImpl(AppUserRepository appUserRepository, ChildrenService childrenService,
                               AppRoleRepository appRoleRepository, PasswordEncoder passwordEncoder) {
@@ -139,6 +138,11 @@ public class AccountServiceImpl implements AccountService, UserDetailsService {
     }
 
     @Override
+    public boolean existsAppUserByEmailOrUsername(String email, String username) {
+    	return this.appUserRepository.existsAppUserByEmailOrUsername(email, username);
+    }
+
+    @Override
     public Optional<AppUser> findByUserId(Long userId) {
         return this.appUserRepository.findById(userId);
     }
@@ -170,24 +174,30 @@ public class AccountServiceImpl implements AccountService, UserDetailsService {
 
         AppUser appUserUpdated = this.appUserRepository.findByUsername(appUser.getUsername());
 
-        if (!this.passwordEncoder.matches(appUser.getPassword(), appUserUpdated.getPassword())) {
-            throw new AccountException("Password doesn't match");
+        if (appUser.getPassword() != null) {
+            if (!this.passwordEncoder.matches(appUser.getPassword(), appUserUpdated.getPassword())) {
+                throw new AccountException("Password doesn't match");
+            } else {
+                appUserUpdated.setPassword(this.passwordEncoder.encode(appUser.getPassword()));
+            }
         }
 
-        appUserUpdated.setAddress(appUser.getAddress());
-        appUserUpdated.setCity(appUser.getCity());
-        appUserUpdated.setCountry(appUser.getCountry());
+        if (appUser.getEmail() != null) {
+        	appUserUpdated.setEmail(appUser.getEmail());
+        }
+
         appUserUpdated.setFirstName(appUser.getFirstName());
         appUserUpdated.setLastName(appUser.getLastName());
         appUserUpdated.setPhone(appUser.getPhone());
         appUserUpdated.setZip(appUser.getZip());
+        appUserUpdated.setCity(appUser.getCity());
+        appUserUpdated.setAddress(appUser.getAddress());
+        appUserUpdated.setCountry(appUser.getCountry());
         appUserUpdated.setBirthdayDate(appUser.getBirthdayDate());
-        appUserUpdated.setPhone(appUser.getPhone());
         appUserUpdated.setIndemnite(appUser.getIndemnite());
         appUserUpdated.setDescription(appUser.getDescription());
-        appUserUpdated.setEmail(appUser.getEmail());
+        
         appUserUpdated.setModifiedDate(new Date());
-
 
         return appUserUpdated;
     }
@@ -200,7 +210,7 @@ public class AccountServiceImpl implements AccountService, UserDetailsService {
             throw new UsernameNotFoundException("User with username : " + username + " not found !");
         else {
             return new org.springframework.security.core.userdetails.User(
-                    user.getEmail(),
+                    user.getUsername(),
                     user.getPassword(),
                     user.getRoles()
                             .stream()

@@ -10,6 +10,9 @@ import org.assisthelp.com.web.model.APIResponse;
 import org.assisthelp.com.form.ChildrenDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -30,6 +33,26 @@ public class ChildrenRestController {
     @GetMapping("/childrens")
     @PreAuthorize("hasAnyAuthority('SCOPE_ASSMAT', 'SCOPE_ADMIN')")
     public ResponseEntity<APIResponse> childrens(String username) {
+        if (username != null) {
+            AppUser user = this.accountService.findByUsername(username);
+            if (user != null) {
+                return ResponseEntity.ok(new APIResponse("childrens", this.childrenService.findAllByUser(user)));
+            } else {
+                return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST,
+                        "User with username " + username + " not found"));
+            }
+        } else {
+            return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST,
+                    "username is required"));
+        }
+    }
+
+    @GetMapping("/current-childrens")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ASSMAT', 'SCOPE_ADMIN')")
+    public ResponseEntity<APIResponse> currentChildrens() {
+        JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) authenticationToken.getCredentials();
+        String username = jwt.getSubject();
         if (username != null) {
             AppUser user = this.accountService.findByUsername(username);
             if (user != null) {

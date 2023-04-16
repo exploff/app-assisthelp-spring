@@ -18,6 +18,8 @@ public interface AccountService {
 
     AppUser findByUsername(String username);
 
+    boolean existsAppUserByEmailOrUsername(String email, String username);
+
     Optional<AppUser> findByUserId(Long userId);
 
     List<AppUser> findAllUsers();

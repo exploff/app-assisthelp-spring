@@ -9,6 +9,9 @@ import org.assisthelp.com.web.constants.APIConstants;
 import org.assisthelp.com.web.model.APIResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.web.bind.annotation.*;
 
 @RestController()
@@ -42,6 +45,14 @@ public class AccountRestController {
         } else {
             return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST, APIConstants.USERNAME_REQUIRED));
         }
+    }
+
+    @GetMapping("/current-user")
+    @PreAuthorize("hasAuthority('SCOPE_USER')")
+    public ResponseEntity<APIResponse> currentUser() {
+        JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) authenticationToken.getCredentials();
+        return ResponseEntity.ok(new APIResponse("user", this.accountService.findByUsername(jwt.getSubject())));
     }
 
     @GetMapping("/role")
@@ -124,7 +135,33 @@ public class AccountRestController {
         }
     }
 
-    //Update user
+
+    //Update current user
+    @PutMapping("/current-user")
+    @PreAuthorize("hasAuthority('SCOPE_USER')")
+    public ResponseEntity<APIResponse> updateCurrentUser(@RequestBody AppUser appUser) {
+
+        JwtAuthenticationToken authenticationToken = (JwtAuthenticationToken) SecurityContextHolder.getContext().getAuthentication();
+        Jwt jwt = (Jwt) authenticationToken.getCredentials();
+        if (appUser != null) {
+            if (!appUser.getUsername().equals(jwt.getSubject())) {
+                return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST, "You can only update your own account"));
+            }
+            AppUser user = this.accountService.findByUsername(appUser.getUsername());
+            if (user != null) {
+                try {
+                    return ResponseEntity.ok(new APIResponse("user", this.accountService.updateUser(appUser)));
+                } catch (AccountException e) {
+                    return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST, e.getMessage()));
+                }
+            } else {
+                return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST, "User dont exists"));
+            }
+        } else {
+            return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST, APIConstants.USER_INFO_REQUIRED));
+        }
+    }
+
     @PutMapping("/user")
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
     public ResponseEntity<APIResponse> updateUser(@RequestBody AppUser appUser) {
@@ -148,8 +185,6 @@ public class AccountRestController {
             return ResponseEntity.badRequest().body(new APIResponse(APIConstants.ERROR_BAD_REQUEST, APIConstants.USER_INFO_REQUIRED));
         }
     }
-
-
 
     @DeleteMapping("/deleteRoleToUser")
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")

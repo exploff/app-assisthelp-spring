@@ -1,6 +1,5 @@
 package org.assisthelp.com;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import org.assisthelp.com.config.RsaKeyConfig;
 import org.assisthelp.com.entity.AppUser;
 import org.assisthelp.com.entity.Children;
@@ -47,8 +46,8 @@ public class AssistHelpApplication {
 
 
             AppUser user = accountService.addNewUser(new AppUser(null, "admin", "1234",
-                    "admin@test.com", "", "", "", "", "", "", new Date(), new Date(), new Date(), "", "",
-                    0.0, new ArrayList<>(), new ArrayList<>()
+                    "admin@test.com", "", "", "", "", "", "Une description", new Date(), new Date(), new Date(), "Julien", "BEDIA",
+                    9.3, new ArrayList<>(), new ArrayList<>()
                     ));
 
             accountService.addNewUser(new AppUser(null, "user1", "1234",
